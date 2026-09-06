@@ -1,0 +1,732 @@
+<title>Krwiobieg</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#0e1318; --panel:#141b22; --panel-2:#192129; --line:#233040; --line-2:#2f3f52;
+    --text:#e7ecf1; --muted:#8b98a8; --dim:#5d6b7c;
+    --accent:#58e69b; --art:#ff4a4a; --vein:#4f7dff; --warn:#f2b544;
+    --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+    --sans:"IBM Plex Sans",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+  .app{height:100%;display:grid;grid-template-rows:auto 1fr;min-height:640px}
+  header{display:flex;align-items:baseline;gap:18px;padding:14px 22px 10px;border-bottom:1px solid var(--line)}
+  header h1{font:700 22px/1 var(--display);letter-spacing:-.01em;margin:0}
+  header p{margin:0;color:var(--muted);font-size:13px}
+  header .live{margin-left:auto;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px;white-space:nowrap}
+  header .live i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:.25}}
+  main{display:grid;grid-template-columns:1fr 336px;min-height:0}
+  .stage{position:relative;min-height:0;background:radial-gradient(ellipse at 50% 60%,rgba(60,90,130,.14),transparent 60%),var(--bg)}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .rail{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;overflow-y:auto;min-height:0}
+  .block{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .block h2{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--panel-2);padding:4px;border-radius:8px}
+  .seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:500 13px var(--sans);padding:7px 0;border-radius:6px;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--line-2);color:var(--text)}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .hr{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+  .hr output{font:500 34px/1 var(--mono);font-variant-numeric:tabular-nums}
+  .hr small{color:var(--muted)}
+  input[type=range]{width:100%;accent-color:var(--accent);margin:6px 0 10px}
+  .presets{display:flex;gap:6px;flex-wrap:wrap}
+  .presets button,.tools button{appearance:none;border:1px solid var(--line-2);background:transparent;color:var(--text);font:500 12px var(--sans);padding:6px 10px;border-radius:999px;cursor:pointer}
+  .presets button:hover,.tools button:hover{border-color:var(--muted)}
+  .presets button.on{border-color:var(--accent);color:var(--accent)}
+  .tools{display:flex;gap:8px 14px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .tools label{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12px}
+  .vitals{display:grid;gap:10px}
+  .card{background:var(--panel-2);border-radius:10px;padding:10px 12px}
+  .card h3{margin:0 0 6px;font:700 15px var(--display);display:flex;align-items:center;gap:8px}
+  .card h3 span{font:400 11px var(--mono);color:var(--muted);margin-left:auto}
+  .card dl{margin:0;display:grid;grid-template-columns:1fr auto;column-gap:12px;row-gap:3px;font-size:12.5px}
+  .card dt{color:var(--muted)}
+  .card dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  .card dd b{font-weight:500}
+  .card dd u{text-decoration:none;color:var(--dim);margin-left:3px}
+  .ecgwrap{padding:10px 12px 8px}
+  .ecgwrap canvas{display:block;width:100%;height:84px;border-radius:8px;background:#0b1015}
+  .legend{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:-1px}
+  .legend i.grad{background:linear-gradient(90deg,var(--art),var(--vein))}
+  .legend i.bron{background:#c9d3de}
+  .stats{font:400 11px var(--mono);color:var(--dim);margin-top:10px}
+  .foot{padding:10px 18px 16px;color:var(--dim);font-size:11.5px;line-height:1.5}
+  @media (max-width:860px){ main{grid-template-columns:1fr;grid-template-rows:62vh auto} .rail{border-left:0;border-top:1px solid var(--line)} }
+  @media (prefers-reduced-motion:reduce){ header .live i{animation:none} }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Krwiobieg</h1>
+    <p>Duży i mały obieg krwi, animowany w czasie rzeczywistym — sylwetka męska i żeńska, widok od przodu.</p>
+    <div class="live"><i></i>symulacja</div>
+  </header>
+  <main>
+    <section class="stage" id="stageWrap"><canvas id="stage"></canvas></section>
+    <aside class="rail">
+      <div class="block">
+        <h2>Sylwetka</h2>
+        <div class="seg" role="group" aria-label="Wybór sylwetki">
+          <button data-mode="male" aria-pressed="false">Mężczyzna</button>
+          <button data-mode="female" aria-pressed="false">Kobieta</button>
+          <button data-mode="both" aria-pressed="true">Obie</button>
+        </div>
+      </div>
+      <div class="block">
+        <h2>Tętno</h2>
+        <div class="hr"><output id="bpmOut">70</output><small>uderzeń / min</small></div>
+        <input type="range" id="bpm" min="40" max="180" value="70" aria-label="Tętno">
+        <div class="presets">
+          <button data-bpm="52">Sen</button>
+          <button data-bpm="70" class="on">Spoczynek</button>
+          <button data-bpm="95">Marsz</button>
+          <button data-bpm="150">Wysiłek</button>
+        </div>
+        <div class="tools">
+          <button id="pause">Zatrzymaj</button>
+          <label><input type="checkbox" id="labels" checked> etykiety</label>
+          <label><input type="checkbox" id="fine" checked> drobne naczynia</label>
+          <label><input type="checkbox" id="organs" checked> narządy</label>
+        </div>
+        <div class="stats" id="stats"></div>
+      </div>
+      <div class="block">
+        <h2>Parametry hemodynamiczne</h2>
+        <div class="vitals" id="vitals"></div>
+      </div>
+      <div class="ecgwrap"><canvas id="ecg"></canvas></div>
+      <div class="block">
+        <h2>Legenda</h2>
+        <div class="legend">
+          <div><i style="background:var(--art)"></i>krew utlenowana — tętnice obiegu dużego, żyły płucne</div>
+          <div><i style="background:var(--vein)"></i>krew odtlenowana — żyły obiegu dużego, tętnica płucna</div>
+          <div><i class="grad"></i>sieć włośniczkowa — wymiana gazowa (kolor zmienia się po drodze)</div>
+          <div><i class="bron"></i>tchawica i drzewo oskrzelowe</div>
+        </div>
+      </div>
+      <p class="foot">Kolory umowne (krew odtlenowana jest ciemnoczerwona, nie niebieska). Drobne naczynia są generowane proceduralnie w obrysie ciała — ich przebieg jest ilustracyjny, nazwane naczynia główne odpowiadają anatomii. Prędkość fali tętna spowolniona ok. 3×, żeby była widoczna.</p>
+    </aside>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const stage = $('#stage'), ctx = stage.getContext('2d');
+  const ecgC = $('#ecg'), ectx = ecgC.getContext('2d');
+  const mctx = document.createElement('canvas').getContext('2d'); // tylko do testów isPointInPath
+  const TAU = Math.PI * 2;
+
+  const COL = {
+    art: '#ff4a4a', vein: '#4f7dff', bronchus: '#c9d3de',
+    bodyA: '#28323e', bodyB: '#161d25', bodyLine: 'rgba(150,170,195,.42)', contour: 'rgba(150,170,195,.2)',
+    hair: '#232c37', lung: 'rgba(200,214,232,.10)', lungLine: 'rgba(200,214,232,.32)', fissure: 'rgba(200,214,232,.22)',
+    organ: 'rgba(200,214,232,.10)', organLine: 'rgba(200,214,232,.22)',
+    label: '#8b98a8', leader: 'rgba(139,152,168,.45)', accent: '#58e69b'
+  };
+  const OXY = [255, 120, 110], DEOXY = [120, 160, 255];
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  const lerpC = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const CAP_A2V = Array.from({ length: 8 }, (_, i) => rgba(lerpC(OXY, DEOXY, i / 7), .95));
+  const CAP_V2A = CAP_A2V.slice().reverse();
+
+  // ---------- fizjologia: kształty fal ----------
+  const wrap = p => ((p % 1) + 1) % 1;
+  const S = p => { p = wrap(p); return p < 0.3 ? Math.sin(Math.PI * p / 0.3) : 0; };          // skurcz komór
+  const ATR = p => { p = wrap(p); return (p > 0.84 && p < 0.98) ? Math.sin(Math.PI * (p - 0.84) / 0.14) : 0; }; // skurcz przedsionków
+  const PWV = 900, ART_V = 62, VEIN_V = 24;
+
+  // ---------- RNG deterministyczny ----------
+  function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // ---------- sylwetki: kontur anatomiczny (lewa połowa, x<0; prawa = lustro) ----------
+  const OUTLINE = {
+    male: [[0,6],[-14,8],[-25,18],[-31,36],[-32,56],[-29,74],[-22,88],[-12,97],[-12,104],[-14,116],[-30,122],[-52,126],[-66,132],[-76,146],
+      [-81,180],[-86,222],[-92,262],[-98,310],[-102,352],[-104,376],[-108,398],[-106,424],[-98,438],[-90,432],[-88,420],[-86,396],[-84,376],
+      [-78,336],[-72,296],[-68,262],[-63,230],[-58,190],[-55,168],[-52,180],[-50,205],[-46,240],[-45,265],[-48,290],[-52,315],[-50,338],
+      [-49,360],[-48,400],[-44,440],[-38,480],[-36,505],[-38,540],[-38,575],[-33,610],[-27,640],[-24,665],[-27,688],[-33,700],[-30,710],[-12,712],[-6,704],[-9,690],
+      [-12,668],[-14,640],[-16,600],[-15,560],[-14,520],[-16,480],[-14,440],[-10,400],[-4,378],[0,372]],
+    female: [[0,8],[-13,10],[-23,20],[-29,38],[-29,58],[-26,76],[-19,90],[-10,98],[-10,105],[-12,118],[-26,124],[-44,128],[-56,134],[-64,148],
+      [-68,182],[-72,222],[-78,262],[-84,310],[-88,350],[-90,374],[-94,396],[-92,420],[-85,432],[-78,426],[-76,414],[-74,394],[-72,376],
+      [-66,336],[-61,298],[-57,262],[-53,230],[-49,192],[-47,168],[-45,180],[-44,205],[-38,240],[-36,262],[-42,290],[-52,315],[-54,340],
+      [-52,362],[-49,400],[-44,440],[-37,480],[-34,505],[-35,540],[-35,575],[-30,610],[-24,640],[-21,665],[-24,688],[-30,700],[-27,710],[-11,712],[-5,704],[-8,690],
+      [-11,668],[-13,640],[-15,600],[-14,560],[-13,520],[-15,480],[-13,440],[-9,400],[-4,378],[0,372]]
+  };
+  const BODIES = {
+    male: { name: 'Mężczyzna', k: 1.0, hair: 'short', tw: 1.0, lungOuter: 46,
+      sh: [-66, 140], el: [-76, 240], wr: [-95, 376], palm: [-97, 412], tips: [-100, 434],
+      hip: [-28, 362], kn: [-26, 505], an: [-18, 665], ft: [-20, 700],
+      svRest: 75, vol: 5.5, hb: 15.0, sysRest: 120, diaRest: 78 },
+    female: { name: 'Kobieta', k: 0.94, hair: 'long', tw: 0.84, lungOuter: 40,
+      sh: [-55, 142], el: [-62, 240], wr: [-81, 375], palm: [-83, 408], tips: [-86, 428],
+      hip: [-27, 362], kn: [-24, 505], an: [-15, 665], ft: [-17, 700],
+      svRest: 62, vol: 4.5, hb: 13.5, sysRest: 112, diaRest: 74 }
+  };
+
+  function catmull(pts, closed) {
+    const P = new Path2D(), n = pts.length;
+    P.moveTo(pts[0][0], pts[0][1]);
+    const last = closed ? n : n - 1;
+    for (let i = 0; i < last; i++) {
+      const p0 = pts[closed ? (i - 1 + n) % n : Math.max(0, i - 1)], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[closed ? (i + 2) % n : Math.min(n - 1, i + 2)];
+      P.bezierCurveTo(p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]);
+    }
+    if (closed) P.closePath();
+    return P;
+  }
+  const mirrorClose = half => half.concat(half.slice(1, -1).reverse().map(([x, y]) => [-x, y]));
+
+  // ---------- ścieżki ----------
+  function makePath(spec) {
+    const pts = spec.pts, segs = []; let len = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 0.001;
+      segs.push({ x0, y0, dx, dy, L, start: len, nx: -dy / L, ny: dx / L });
+      len += L;
+    }
+    return Object.assign({ d0: 0, particles: [], gen: 0, lung: false }, spec, { segs, len });
+  }
+  function pointAt(path, d) {
+    d = Math.max(0, Math.min(path.len, d));
+    let s = path.segs[path.segs.length - 1];
+    for (const g of path.segs) if (d <= g.start + g.L) { s = g; break; }
+    const t = (d - s.start) / s.L;
+    return { x: s.x0 + s.dx * t, y: s.y0 + s.dy * t, nx: s.nx, ny: s.ny };
+  }
+  function nearestD(path, x, y) {
+    let best = 0, bd = Infinity;
+    for (const s of path.segs) {
+      let t = ((x - s.x0) * s.dx + (y - s.y0) * s.dy) / (s.L * s.L); t = Math.max(0, Math.min(1, t));
+      const dd = (s.x0 + s.dx * t - x) ** 2 + (s.y0 + s.dy * t - y) ** 2;
+      if (dd < bd) { bd = dd; best = s.start + t * s.L; }
+    }
+    return best;
+  }
+  const inside = (mask, x, y) => mctx.isPointInPath(mask, x, y);
+
+  // Generator drzewa: rekurencyjne rozgałęzianie ograniczone maską (Path2D).
+  function growTree(o) {
+    const rng = o.rng;
+    function branch(x, y, ang, len, w, level, d0) {
+      const pts = [[x, y]]; let cx = x, cy = y, a = ang; const n = 3;
+      for (let i = 0; i < n; i++) {
+        a += (rng() - 0.5) * 0.55;
+        let nx = cx + Math.cos(a) * len / n, ny = cy + Math.sin(a) * len / n, ok = inside(o.mask, nx, ny);
+        for (let tr = 0; !ok && tr < 4; tr++) { // poza obrysem: skręć zamiast się urywać
+          a += (tr % 2 ? 1 : -1) * 0.7 * (tr + 1);
+          nx = cx + Math.cos(a) * len / n; ny = cy + Math.sin(a) * len / n; ok = inside(o.mask, nx, ny);
+        }
+        if (!ok) break;
+        pts.push([nx, ny]); cx = nx; cy = ny;
+      }
+      if (pts.length < 2) return;
+      const leaf = level >= o.maxLevel || w * 0.62 < 0.28 || pts.length < n + 1;
+      const p = makePath({ name: '', kind: leaf ? (o.leafKind || o.kind) : o.kind, w, pts: o.reverse ? pts.slice().reverse() : pts, gen: level, lung: !!o.lung });
+      p.d0 = d0; o.out.push(p);
+      if (o.companion) o.companion(p, leaf);
+      if (leaf) return;
+      const k = rng() < 0.22 ? 3 : 2;
+      for (let i = 0; i < k; i++) {
+        const sgn = k === 2 ? (i ? 1 : -1) : (i - 1);
+        branch(cx, cy, a + sgn * (0.32 + rng() * 0.5) + (rng() - 0.5) * 0.2, len * (0.6 + rng() * 0.22), w * 0.62, level + 1, d0 + p.len);
+      }
+    }
+    branch(o.x, o.y, o.ang, o.len, o.w, 1, o.d0 || 0);
+  }
+
+  // Wszystkie ścieżki zapisane w kierunku przepływu. +x = prawa strona ekranu = lewa strona anatomiczna.
+  function buildFigure(id) {
+    const B = BODIES[id], tw = B.tw, rng = mulberry32(id === 'male' ? 1337 : 4242);
+    const bodyPath = catmull(mirrorClose(OUTLINE[id]), true);
+    const list = [];
+    const add = (name, kind, w, pts, parent) => list.push({ name, kind, w, pts, parent });
+    const Mx = pts => pts.map(([x, y]) => [-x, y]);
+    const [shx, shy] = B.sh, [elx, ely] = B.el, [wrx, wry] = B.wr, [pmx, pmy] = B.palm, [tpx, tpy] = B.tips;
+    const [hpx, hpy] = B.hip, [knx, kny] = B.kn, [anx, any_] = B.an, [ftx, fty] = B.ft;
+
+    // --- serce → aorta → tętnice obiegu dużego ---
+    add('aorta', 'art', 5.6, [[2, 202], [-4, 190], [-3, 177], [3, 170], [10, 176], [9, 196], [7, 262], [5, 330], [4, 344]]);
+    const carR = [[-2, 172], [-8, 152], [-10, 128], [-9, 110], [-10, 94], [-8, 78], [-6, 60], [-4, 42]];
+    add('t. szyjna P', 'art', 2.6, carR, 'aorta');
+    add('t. szyjna L', 'art', 2.6, Mx(carR).map(([x, y]) => [x + 3, y]), 'aorta');
+    add('t. twarzowa P', 'art', 1.3, [[-10, 94], [-20, 82], [-26, 66], [-22, 54]], 't. szyjna P');
+    add('t. twarzowa L', 'art', 1.3, [[13, 94], [23, 82], [29, 66], [25, 54]], 't. szyjna L');
+    add('t. skroniowa P', 'art', 1.1, [[-8, 78], [-22, 62], [-28, 42], [-24, 22]], 't. szyjna P');
+    add('t. skroniowa L', 'art', 1.1, [[11, 78], [25, 62], [31, 42], [27, 22]], 't. szyjna L');
+    add('t. kręgowa P', 'art', 1.1, [[-3, 176], [-4, 150], [-3, 120], [-2, 96]], 'aorta');
+    const armA = [[-3, 176], [-22, 152], [-46, 140], [shx + 4, shy + 6], [elx + 4, ely], [wrx + 3, wry], [pmx + 1, pmy]];
+    add('t. ramienna P', 'art', 3.0, armA, 'aorta');
+    add('t. ramienna L', 'art', 3.0, Mx(armA), 'aorta');
+    add('t. promieniowa P', 'art', 1.4, [[wrx + 3, wry], [pmx - 6, pmy + 6], [tpx - 4, tpy - 8]], 't. ramienna P');
+    add('t. łokciowa P', 'art', 1.4, [[wrx + 3, wry], [pmx + 7, pmy + 8], [tpx + 5, tpy - 6]], 't. ramienna P');
+    add('t. promieniowa L', 'art', 1.4, [[-wrx - 3, wry], [-pmx + 6, pmy + 6], [-tpx + 4, tpy - 8]], 't. ramienna L');
+    add('t. łokciowa L', 'art', 1.4, [[-wrx - 3, wry], [-pmx - 7, pmy + 8], [-tpx - 5, tpy - 6]], 't. ramienna L');
+    for (const y of [206, 224, 242]) { // tętnice międzyżebrowe
+      add('', 'art', 0.9, [[7, y], [-16 * tw, y + 4], [-40 * tw, y + 10]], 'aorta');
+      add('', 'art', 0.9, [[7, y], [22 * tw, y + 4], [42 * tw, y + 10]], 'aorta');
+    }
+    add('t. wątrobowa', 'art', 1.5, [[7, 284], [-12 * tw, 290], [-26 * tw, 298]], 'aorta');
+    add('t. śledzionowa', 'art', 1.3, [[7, 284], [24 * tw, 290], [40 * tw, 298]], 'aorta');
+    add('t. nerkowa P', 'art', 1.6, [[6, 304], [-18 * tw, 302], [-30 * tw, 306]], 'aorta');
+    add('t. nerkowa L', 'art', 1.6, [[6, 304], [22 * tw, 302], [34 * tw, 304]], 'aorta');
+    add('t. krezkowa', 'art', 1.5, [[6, 322], [0, 336], [-6, 352]], 'aorta');
+    const legA = [[4, 344], [-12, 358], [hpx + 2, hpy + 14], [hpx - 2, 420], [knx - 2, kny - 20], [knx - 1, kny + 20], [anx - 2, any_ - 10], [ftx - 2, fty + 2], [ftx + 2, fty + 10]];
+    add('t. udowa P', 'art', 3.4, legA, 'aorta');
+    add('t. udowa L', 'art', 3.4, Mx(legA), 'aorta');
+    add('t. piszczelowa przednia P', 'art', 1.5, [[knx - 1, kny + 20], [knx - 8, 570], [anx - 9, 650], [ftx - 10, 692]], 't. udowa P');
+    add('t. piszczelowa przednia L', 'art', 1.5, [[-knx + 1, kny + 20], [-knx + 8, 570], [-anx + 9, 650], [-ftx + 10, 692]], 't. udowa L');
+
+    // --- żyły obiegu dużego (od obwodu do prawego przedsionka) ---
+    add('ż. szyjna P', 'vein', 2.8, [[-6, 44], [-14, 70], [-16, 96], [-15, 120], [-13, 142], [-10, 160], [-6, 176], [-3, 190], [-1, 204]]);
+    add('ż. szyjna L', 'vein', 2.8, [[9, 44], [18, 70], [20, 96], [18, 120], [16, 142], [11, 160], [3, 174], [-3, 186]]);
+    add('ż. twarzowa P', 'vein', 1.2, [[-24, 58], [-22, 76], [-16, 96]]);
+    add('ż. twarzowa L', 'vein', 1.2, [[27, 58], [26, 76], [20, 96]]);
+    const armV = [[tpx + 8, tpy - 10], [pmx + 6, pmy - 2], [wrx - 4, wry - 2], [elx - 5, ely], [shx - 5, shy + 4], [-44, 150], [-22, 162], [-8, 178], [-3, 186]];
+    add('ż. ramienna P', 'vein', 2.8, armV);
+    add('ż. ramienna L', 'vein', 2.8, Mx(armV).slice(0, 6).concat([[22, 162], [8, 176], [-3, 186]]));
+    add('ż. odpromieniowa P', 'vein', 1.3, [[wrx - 10, wry - 12], [elx - 11, ely - 16], [shx - 8, shy + 40], [shx - 5, shy + 4]]);
+    add('ż. odłokciowa P', 'vein', 1.3, [[wrx + 8, wry - 12], [elx + 9, ely + 8], [elx + 2, ely - 40], [elx - 5, ely]]);
+    add('ż. odpromieniowa L', 'vein', 1.3, [[-wrx + 10, wry - 12], [-elx + 11, ely - 16], [-shx + 8, shy + 40], [-shx + 5, shy + 4]]);
+    add('ż. odłokciowa L', 'vein', 1.3, [[-wrx - 8, wry - 12], [-elx - 9, ely + 8], [-elx - 2, ely - 40], [-elx + 5, ely]]);
+    add('', 'vein', 1.0, [[elx + 9, ely + 8], [elx - 11, ely - 16]]); // ż. pośrodkowa łokcia
+    add('', 'vein', 1.0, [[-elx - 9, ely + 8], [-elx + 11, ely - 16]]);
+    const legV = [[ftx + 6, fty + 6], [anx + 4, any_], [knx + 4, kny], [hpx + 3, 420], [hpx + 4, hpy + 12], [-16, 370], [-8, 356], [-5, 344]];
+    add('ż. udowa P', 'vein', 3.2, legV);
+    add('ż. udowa L', 'vein', 3.2, Mx(legV).slice(0, 7).concat([[-5, 344]]));
+    add('ż. odpiszczelowa P', 'vein', 1.4, [[ftx + 10, fty - 4], [anx + 8, any_ - 8], [knx + 10, 570], [knx + 9, kny - 24], [hpx + 9, 424], [hpx + 4, hpy + 12]]);
+    add('ż. odpiszczelowa L', 'vein', 1.4, [[-ftx - 10, fty - 4], [-anx - 8, any_ - 8], [-knx - 10, 570], [-knx - 9, kny - 24], [-hpx - 9, 424], [-hpx - 4, hpy + 12]]);
+    add('ż. odstrzałkowa P', 'vein', 1.1, [[ftx - 8, fty - 2], [anx - 7, any_ - 14], [knx - 7, 566], [knx + 4, kny + 10]]);
+    add('ż. odstrzałkowa L', 'vein', 1.1, [[-ftx + 8, fty - 2], [-anx + 7, any_ - 14], [-knx + 7, 566], [-knx - 4, kny + 10]]);
+    add('ż. główna dolna', 'vein', 5.0, [[-5, 344], [-6, 300], [-5, 278], [-4, 250], [-3, 224], [-1, 208]]);
+    add('ż. nerkowa P', 'vein', 1.5, [[-30 * tw, 312], [-18 * tw, 310], [-5, 306]]);
+    add('ż. nerkowa L', 'vein', 1.5, [[34 * tw, 310], [22 * tw, 308], [-5, 306]]);
+    add('ż. wrotna', 'vein', 2.0, [[-4, 356], [-10, 338], [-14 * tw, 318], [-20 * tw, 304]]); // jelita → wątroba
+    add('', 'vein', 1.4, [[18 * tw, 350], [8, 340], [-10, 338]]);
+    add('ż. wątrobowa', 'vein', 1.6, [[-24 * tw, 290], [-14 * tw, 284], [-5, 278]]);
+
+    // --- obieg mały: pień płucny + główne gałęzie, żyły płucne do lewego przedsionka ---
+    const lo = B.lungOuter, kx = lo / 46;
+    add('pień płucny', 'pa', 4.0, [[3, 210], [-1, 198], [1, 186]]);
+    add('t. płucna P', 'pa', 3.2, [[1, 186], [-12 * kx, 190], [-24 * kx, 196]], 'pień płucny');
+    add('t. płucna L', 'pa', 3.0, [[1, 186], [14 * kx, 190], [28 * kx, 198]], 'pień płucny');
+    add('ż. płucna P', 'pv', 2.4, [[-14 * kx, 210], [-4, 210], [8, 208]]);
+    add('', 'pv', 2.2, [[-14 * kx, 226], [-2, 220], [8, 212]]);
+    add('ż. płucna L', 'pv', 2.4, [[18 * kx, 214], [12, 210]]);
+    add('', 'pv', 2.2, [[18 * kx, 228], [13, 218], [11, 214]]);
+
+    const byName = {};
+    const paths = list.map(spec => { const p = makePath(spec); p.lung = /płuc/.test(p.name) || p.kind === 'pa' || p.kind === 'pv'; if (p.name) byName[p.name] = p; return p; });
+    for (const p of paths) if (p.parent && byName[p.parent]) { const par = byName[p.parent]; p.d0 = par.d0 + nearestD(par, p.pts[0][0], p.pts[0][1]); }
+
+    // --- płuca: obrysy, szczeliny, tchawica, oskrzela, drzewa naczyń płucnych ---
+    const lungR = catmull([[-22,140],[-34,146],[-44,166],[-47,200],[-46,240],[-42,272],[-30,282],[-14,280],[-10,262],[-10,220],[-12,190],[-14,160]].map(([x,y]) => [x*kx, y]), true);
+    const lungL = catmull([[22,142],[34,148],[43,170],[45,205],[44,242],[40,274],[26,284],[16,280],[14,262],[18,240],[26,228],[24,210],[12,196],[10,180],[12,160]].map(([x,y]) => [x*kx, y]), true);
+    const fissures = [
+      catmull([[-42,196],[-32,232],[-20,262],[-15,278]].map(([x,y]) => [x*kx, y]), false),   // szczelina skośna P
+      catmull([[-40,214],[-26,212],[-12,208]].map(([x,y]) => [x*kx, y]), false),             // szczelina pozioma P
+      catmull([[40,200],[32,236],[24,266],[20,282]].map(([x,y]) => [x*kx, y]), false)        // szczelina skośna L
+    ];
+    const fine = []; // ścieżki generowane
+    const lungs = { R: lungR, L: lungL, fissures, kx };
+    const bronchi = [];
+    const addBr = (w, pts, d0) => { const p = makePath({ name: '', kind: 'bronchus', w, pts, lung: true }); p.d0 = d0; bronchi.push(p); return p; };
+    addBr(6.0, [[0, 104], [0, 136], [0, 168]], 0);                          // tchawica
+    const brR = addBr(4.0, [[0, 168], [-12 * kx, 180], [-22 * kx, 190]], 60);  // oskrzele główne P (krótsze, bardziej pionowe)
+    const brL = addBr(3.6, [[0, 168], [14 * kx, 182], [30 * kx, 194]], 60);    // oskrzele główne L
+    const lobar = [
+      { s: 'R', pts: [[-20, 186], [-30, 172], [-36, 158]], ang: -1.9 }, { s: 'R', pts: [[-22, 190], [-32, 206], [-38, 216]], ang: 2.6 }, { s: 'R', pts: [[-22, 190], [-28, 216], [-32, 246]], ang: 1.8 },
+      { s: 'L', pts: [[26, 192], [30, 178], [34, 164]], ang: -1.2 }, { s: 'L', pts: [[30, 194], [34, 222], [36, 250]], ang: 1.4 }
+    ];
+    // tętnica płucna biegnie równolegle do oskrzela (pęczek oskrzelowo-naczyniowy)
+    const companion = (br, leaf) => {
+      const off = 2.4 + br.w * 0.35;
+      const pts = br.pts.map((pt, i) => { const s = br.segs[Math.min(i, br.segs.length - 1)]; return [pt[0] + s.nx * off, pt[1] + s.ny * off]; });
+      const p = makePath({ name: '', kind: leaf ? 'pcap' : 'pa', w: Math.max(0.35, br.w * 0.7), pts, gen: br.gen, lung: true }); p.d0 = br.d0 + 30; fine.push(p);
+    };
+    for (const lb of lobar) {
+      const pts = lb.pts.map(([x, y]) => [x * kx, y]);
+      const b = addBr(2.2, pts, 90); companion(b, false);
+      const e = pts[pts.length - 1];
+      growTree({ x: e[0], y: e[1], ang: lb.ang, len: 26, w: 1.5, maxLevel: 3, mask: lungs[lb.s], rng, kind: 'bronchus', out: bronchi, lung: true, d0: b.d0 + b.len,
+        companion: (p, leaf) => companion(p, leaf) });
+    }
+    // żyły płucne: drzewa od wnęki w głąb płuca (geometria), przepływ w stronę serca (reverse)
+    for (const h of [[-14, 210, 'R', Math.PI + 0.5], [-14, 226, 'R', Math.PI - 0.6], [18, 214, 'L', -0.5], [18, 228, 'L', 0.55]])
+      growTree({ x: h[0] * kx, y: h[1], ang: h[3], len: 22, w: 1.5, maxLevel: 3, mask: lungs[h[2]], rng, kind: 'pv', out: fine, lung: true, reverse: true });
+
+    // --- drobne naczynia obiegu dużego: pary tętniczka (liść = włośniczka) + żyłka ---
+    const pair = (x, y, ang, len, w, lvl, d0) => {
+      growTree({ x, y, ang, len, w, maxLevel: lvl, mask: bodyPath, rng, kind: 'art', leafKind: 'cap', out: fine, d0 });
+      const nx = -Math.sin(ang) * 3, ny = Math.cos(ang) * 3;
+      growTree({ x: x + nx, y: y + ny, ang, len: len * 0.95, w: w * 0.95, maxLevel: lvl, mask: bodyPath, rng, kind: 'vein', out: fine, reverse: true });
+    };
+    const dOf = (name, x, y) => { const p = byName[name]; return p ? p.d0 + nearestD(p, x, y) : 0; };
+    for (const s of [-1, 1]) {
+      const m = (x) => s * x, nm = s < 0 ? 'P' : 'L';
+      // dłoń: łuki dłoniowe
+      pair(m(pmx - 6), pmy + 6, Math.PI / 2 + s * 0.3, 12, 0.9, 3, dOf('t. promieniowa ' + nm, m(pmx - 6), pmy + 6));
+      pair(m(pmx + 7), pmy + 8, Math.PI / 2 - s * 0.3, 12, 0.9, 3, dOf('t. łokciowa ' + nm, m(pmx + 7), pmy + 8));
+      // ramię i przedramię: gałęzie mięśniowe
+      for (const t of [0.35, 0.5, 0.65, 0.8]) {
+        const p = byName['t. ramienna ' + nm], pt = pointAt(p, p.len * t);
+        pair(pt.x, pt.y, Math.PI / 2 + (rng() - 0.5) * 1.6, 14, 0.9, 3, p.d0 + p.len * t);
+      }
+      // udo, podudzie, stopa
+      for (const t of [0.3, 0.42, 0.55, 0.7, 0.82]) {
+        const p = byName['t. udowa ' + nm], pt = pointAt(p, p.len * t);
+        pair(pt.x, pt.y, Math.PI / 2 + (rng() - 0.5) * 2.2, 16, 1.0, 3, p.d0 + p.len * t);
+      }
+      pair(m(ftx + 2), fty + 8, s < 0 ? -0.2 : Math.PI + 0.2, 12, 0.9, 3, dOf('t. udowa ' + nm, m(ftx + 2), fty + 8));
+      pair(m(ftx - 10), 690, s < 0 ? -0.5 : Math.PI + 0.5, 10, 0.8, 2, dOf('t. piszczelowa przednia ' + nm, m(ftx - 10), 690));
+      // głowa: t. mózgowe (od t. szyjnej wewnętrznej), t. twarzowa, t. skroniowa
+      const cx0 = s < 0 ? -4 : 7;
+      pair(cx0, 42, -Math.PI / 2 + s * 0.6, 16, 1.1, 3, dOf('t. szyjna ' + nm, cx0, 42));
+      pair(cx0, 42, -Math.PI / 2 + s * 1.4, 14, 0.9, 2, dOf('t. szyjna ' + nm, cx0, 42));
+      pair(s < 0 ? -22 : 25, 54, -Math.PI / 2 + s * 1.0, 12, 0.8, 2, dOf('t. twarzowa ' + nm, s < 0 ? -22 : 25, 54));
+      pair(s < 0 ? -24 : 27, 22, -Math.PI / 2 - s * 0.6, 10, 0.7, 2, dOf('t. skroniowa ' + nm, s < 0 ? -24 : 27, 22));
+      // klatka: międzyżebrowe
+      for (const y of [216, 234, 252]) pair(m(41 * tw), y, s < 0 ? Math.PI - 0.9 : 0.9, 8, 0.6, 1, 120);
+    }
+    // narządy jamy brzusznej
+    pair(-26 * tw, 298, Math.PI + 0.6, 14, 1.0, 3, dOf('t. wątrobowa', -26 * tw, 298));   // wątroba
+    pair(-30 * tw, 306, Math.PI, 8, 0.9, 2, dOf('t. nerkowa P', -30 * tw, 306));            // nerka P
+    pair(34 * tw, 304, 0, 8, 0.9, 2, dOf('t. nerkowa L', 34 * tw, 304));                    // nerka L
+    pair(40 * tw, 298, 0.4, 8, 0.8, 2, dOf('t. śledzionowa', 40 * tw, 298));                // śledziona
+    pair(-6, 352, Math.PI + 0.3, 16, 1.1, 3, dOf('t. krezkowa', -6, 352));                  // jelita
+    pair(-6, 352, -0.3, 16, 1.1, 3, dOf('t. krezkowa', -6, 352));
+
+    // cząstki
+    const spacing = p => { if (p.kind === 'bronchus') return Infinity; const b = { art: 9, vein: 7, pa: 9, pv: 8, cap: 13, pcap: 13 }[p.kind]; return b + 4 * p.gen; };
+    const all = paths.concat(fine);
+    for (const p of all) {
+      let n = Math.floor(p.len / spacing(p)); if (n === 0 && p.len > 5 && rng() < 0.6) n = 1;
+      for (let i = 0; i < n; i++) p.particles.push({ d: rng() * p.len, off: (rng() - 0.5) * 0.9, r: 1.15 + rng() * 0.8 });
+    }
+    // statyczne grupy rysowania dla drobnych naczyń
+    const groups = new Map();
+    for (const p of fine.concat(bronchi)) {
+      if (p.kind === 'bronchus' && p.gen === 0) continue;
+      const key = p.kind + '|' + (Math.round(p.w * 4) / 4) + '|' + p.lung;
+      if (!groups.has(key)) groups.set(key, { kind: p.kind, w: Math.round(p.w * 4) / 4, lung: p.lung, P: new Path2D() });
+      const P = groups.get(key).P; P.moveTo(p.pts[0][0], p.pts[0][1]); for (let i = 1; i < p.pts.length; i++) P.lineTo(p.pts[i][0], p.pts[i][1]);
+    }
+    const labels = [
+      { t: 'płuco (3 płaty)', ax: -lo + 4, ay: 176, side: -1, y: 168 },
+      { t: 'tchawica', ax: 3, ay: 130, side: 1, y: 122 },
+      { t: 'oskrzele główne', ax: 30 * kx, ay: 194, side: 1, y: 186 },
+      { t: 'serce', ax: 30, ay: 224, side: 1, y: 224 },
+      { t: 'aorta', ax: 9, ay: 268, side: 1, y: 262 },
+      { t: 'śledziona', ax: 42 * tw, ay: 298, side: 1, y: 298 },
+      { t: 'nerka', ax: 40 * tw, ay: 308, side: 1, y: 324 },
+      { t: 't. biodrowa', ax: 14, ay: 360, side: 1, y: 362 },
+      { t: 't. udowa', ax: -hpx + 3, ay: 440, side: 1, y: 440 },
+      { t: 'ż. odpiszczelowa', ax: -knx - 10, ay: 580, side: 1, y: 580 },
+      { t: 't. piszczelowa', ax: -anx + 9, ay: 650, side: 1, y: 650 },
+      { t: 't. szyjna', ax: -9, ay: 118, side: -1, y: 112 },
+      { t: 'ż. szyjna', ax: -15, ay: 142, side: -1, y: 140 },
+      { t: 't. płucna', ax: -24 * kx, ay: 196, side: -1, y: 200 },
+      { t: 't. ramienna', ax: elx + 4, ay: ely, side: -1, y: 240 },
+      { t: 'wątroba', ax: -40 * tw, ay: 300, side: -1, y: 296 },
+      { t: 'ż. wrotna', ax: -12, ay: 330, side: -1, y: 330 },
+      { t: 'ż. główna dolna', ax: -5, ay: 250, side: -1, y: 266 },
+      { t: 'ż. udowa', ax: hpx + 3, ay: 470, side: -1, y: 470 },
+      { t: 'ż. odstrzałkowa', ax: anx - 7, ay: 640, side: -1, y: 640 },
+    ];
+    return { id, B, bodyPath, paths, fine, bronchi, groups, lungs, labels, counts: { vessels: all.length + bronchi.length, particles: all.reduce((a, p) => a + p.particles.length, 0) } };
+  }
+
+  const FIG = { male: buildFigure('male'), female: buildFigure('female') };
+
+  // ---------- rysowanie ----------
+  function drawBody(fig) {
+    const B = fig.B;
+    if (B.hair === 'long') {
+      ctx.fillStyle = COL.hair;
+      ctx.fill(catmull(mirrorClose([[0, 0], [-26, 6], [-36, 40], [-38, 92], [-42, 132], [-34, 160], [-14, 152], [0, 150]]), true));
+    }
+    const g = ctx.createRadialGradient(0, 300, 40, 0, 300, 420);
+    g.addColorStop(0, COL.bodyA); g.addColorStop(1, COL.bodyB);
+    ctx.fillStyle = g; ctx.fill(fig.bodyPath);
+    ctx.lineWidth = 1.2; ctx.strokeStyle = COL.bodyLine; ctx.stroke(fig.bodyPath);
+    ctx.fillStyle = COL.hair;
+    if (B.hair === 'short') ctx.fill(catmull(mirrorClose([[0, 2], [-18, 4], [-29, 20], [-33, 44], [-29, 36], [-18, 28], [0, 26]]), true));
+    else ctx.fill(catmull(mirrorClose([[0, 4], [-16, 6], [-27, 22], [-30, 46], [-27, 34], [-14, 30], [0, 30]]), true));
+    // kontury wewnętrzne: obojczyki, mostek, klatka/piersi, pępek, rzepki
+    ctx.strokeStyle = COL.contour; ctx.lineWidth = 1; ctx.lineCap = 'round';
+    const [shx, shy] = B.sh, [knx, kny] = B.kn;
+    for (const s of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(s * 4, 124); ctx.quadraticCurveTo(s * 30, 118, s * (-shx - 8), shy - 10); ctx.stroke();
+      ctx.beginPath();
+      if (B.hair === 'short') { ctx.moveTo(s * 6, 176); ctx.quadraticCurveTo(s * 30, 196, s * 46, 176); }
+      else { ctx.arc(s * 20, 188, 17, 0.2, Math.PI - 0.2); }
+      ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(s * knx, kny, 7, 9, 0, 0, TAU); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(0, 130); ctx.lineTo(0, 168); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 318, 2, 0, TAU); ctx.stroke();
+  }
+
+  function drawOrgans(fig) {
+    const tw = fig.B.tw;
+    const sh = (pts) => catmull(pts.map(([x, y]) => [x * tw, y]), true);
+    ctx.fillStyle = COL.organ; ctx.strokeStyle = COL.organLine; ctx.lineWidth = 0.8;
+    for (const P of [
+      sh([[-46, 280], [-44, 302], [-30, 326], [-6, 330], [14, 318], [20, 300], [8, 288], [-14, 284]]),          // wątroba
+      sh([[14, 292], [30, 296], [38, 314], [30, 332], [14, 328], [8, 310]]),                                    // żołądek
+      sh([[38, 288], [46, 294], [46, 306], [40, 312], [36, 302]]),                                              // śledziona
+      sh([[-36, 296], [-28, 298], [-26, 312], [-30, 320], [-38, 316], [-40, 306]]),                            // nerka P
+      sh([[28, 294], [36, 296], [40, 306], [38, 318], [30, 320], [26, 308]]),                                   // nerka L
+      sh([[-30, 336], [30, 336], [34, 356], [26, 374], [-26, 374], [-34, 356]])                                 // jelita
+    ]) { ctx.fill(P); ctx.stroke(P); }
+    ctx.beginPath(); // pętle jelit
+    for (let y = 342; y < 372; y += 8) { ctx.moveTo(-28 * tw, y); for (let x = -24; x <= 24; x += 8) ctx.quadraticCurveTo((x + 4) * tw, y + 5, (x + 8) * tw, y); }
+    ctx.stroke();
+  }
+
+  function drawLungs(fig, resp) {
+    const L = fig.lungs;
+    ctx.fillStyle = COL.lung; ctx.strokeStyle = COL.lungLine; ctx.lineWidth = 1;
+    ctx.fill(L.R); ctx.stroke(L.R); ctx.fill(L.L); ctx.stroke(L.L);
+    ctx.strokeStyle = COL.fissure; ctx.setLineDash([3, 3]); for (const f of L.fissures) ctx.stroke(f); ctx.setLineDash([]);
+    // przepona: dwie kopuły, opadają przy wdechu
+    const dy = 5 * resp; ctx.strokeStyle = COL.lungLine; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(-48 * L.kx, 280 + dy); ctx.quadraticCurveTo(-28 * L.kx, 258 + dy, -6, 284 + dy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(12, 286 + dy); ctx.quadraticCurveTo(30 * L.kx, 266 + dy, 46 * L.kx, 280 + dy); ctx.stroke();
+    // tchawica z pierścieniami i oskrzela główne
+    ctx.strokeStyle = COL.bronchus; ctx.lineCap = 'round';
+    for (const b of fig.bronchi) if (b.gen === 0) {
+      ctx.globalAlpha = 0.55; ctx.lineWidth = b.w; ctx.beginPath(); ctx.moveTo(b.pts[0][0], b.pts[0][1]); for (let i = 1; i < b.pts.length; i++) ctx.lineTo(b.pts[i][0], b.pts[i][1]); ctx.stroke();
+      if (b.w >= 6) { ctx.globalAlpha = 0.5; ctx.lineWidth = 0.8; for (let y = 108; y < 166; y += 5) { ctx.beginPath(); ctx.moveTo(-2.4, y); ctx.lineTo(2.4, y); ctx.stroke(); } }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawVessel(path, phase, resp) {
+    const pulsatile = path.kind === 'art' || path.kind === 'pa';
+    ctx.strokeStyle = (path.kind === 'art' || path.kind === 'pv') ? COL.art : COL.vein;
+    for (const s of path.segs) {
+      const dm = path.d0 + s.start + s.L / 2;
+      ctx.lineWidth = path.w * (pulsatile ? 1 + 0.28 * S(phase - dm / PWV) : 1 + 0.06 * resp);
+      ctx.beginPath(); ctx.moveTo(s.x0, s.y0); ctx.lineTo(s.x0 + s.dx, s.y0 + s.dy); ctx.stroke();
+    }
+  }
+  function drawGroups(fig, lung) {
+    for (const g of fig.groups.values()) {
+      if (g.lung !== lung) continue;
+      ctx.strokeStyle = g.kind === 'bronchus' ? COL.bronchus : (g.kind === 'art' || g.kind === 'pv') ? COL.art : (g.kind === 'cap' || g.kind === 'pcap') ? '#b46cc8' : COL.vein;
+      ctx.globalAlpha = g.kind === 'bronchus' ? 0.5 : 0.42; ctx.lineWidth = g.w; ctx.stroke(g.P);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function speed(p, d, phase, resp) {
+    const gf = 1 / (1 + 0.35 * p.gen);
+    switch (p.kind) {
+      case 'art':  return ART_V * (0.22 + 2.4 * S(phase - (p.d0 + d) / PWV)) * gf;
+      case 'cap':  return ART_V * 0.22 * (0.6 + 0.6 * S(phase - (p.d0 + d) / PWV));
+      case 'pa':   return ART_V * (0.35 + 1.6 * S(phase - (p.d0 + d) / PWV - 0.02)) * gf;
+      case 'pcap': return ART_V * 0.22 * (0.6 + 0.6 * S(phase - (p.d0 + d) / PWV - 0.02));
+      case 'pv':   return VEIN_V * (1.4 + 0.5 * S(phase - 0.15)) * gf;
+      default:     return VEIN_V * (1 + 0.3 * resp + 0.15 * ATR(phase)) * gf; // żyły: pompa oddechowa + skurcz przedsionka
+    }
+  }
+  function drawParticles(list, phase, resp, dt) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (const p of list) {
+      if (!p.particles.length) continue;
+      const cap = p.kind === 'cap' || p.kind === 'pcap';
+      if (!cap) ctx.fillStyle = (p.kind === 'art' || p.kind === 'pv') ? rgba(OXY, .95) : rgba(DEOXY, .95);
+      const rs = Math.min(1, p.w / 2.2);
+      for (const q of p.particles) {
+        if (dt > 0) { q.d += speed(p, q.d, phase, resp) * dt; if (q.d > p.len) q.d -= p.len; }
+        const pt = pointAt(p, q.d), o = q.off * p.w * 0.5, r = q.r * rs;
+        if (cap) ctx.fillStyle = (p.kind === 'cap' ? CAP_A2V : CAP_V2A)[Math.min(7, Math.floor(q.d / p.len * 8))];
+        const x = pt.x + pt.nx * o, y = pt.y + pt.ny * o;
+        if (r < 0.75) ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+        else { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function drawHeart(phase) {
+    const sc = 1 - 0.13 * S(phase) + 0.04 * ATR(phase);
+    ctx.save(); ctx.translate(8, 216); ctx.rotate(-0.45); ctx.scale(sc, sc);
+    const s = 21;
+    const g = ctx.createRadialGradient(-5, -7, 2, 0, 0, s * 1.4);
+    g.addColorStop(0, '#f05a62'); g.addColorStop(1, '#7d1a22');
+    ctx.fillStyle = g; ctx.shadowColor = 'rgba(255,80,90,' + (0.25 + 0.5 * S(phase)) + ')'; ctx.shadowBlur = 16;
+    ctx.beginPath(); ctx.moveTo(0, s);
+    ctx.bezierCurveTo(-s * 1.3, s * 0.1, -s * 0.9, -s * 0.9, 0, -s * 0.35);
+    ctx.bezierCurveTo(s * 0.9, -s * 0.9, s * 1.3, s * 0.1, 0, s);
+    ctx.fill(); ctx.shadowBlur = 0;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(-s * 0.95, -s * 0.05); ctx.quadraticCurveTo(0, s * 0.15, s * 0.95, -s * 0.05); ctx.stroke(); // bruzda wieńcowa
+    ctx.strokeStyle = 'rgba(255,150,140,.7)'; ctx.lineWidth = 1.1;  // t. wieńcowe: prawa i gałąź międzykomorowa przednia
+    ctx.beginPath(); ctx.moveTo(-3, -8); ctx.quadraticCurveTo(-1, 2, 2, 14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-5, -6); ctx.quadraticCurveTo(-14, 0, -11, 10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-1, -6); ctx.quadraticCurveTo(10, -2, 12, 6); ctx.stroke();
+    ctx.strokeStyle = 'rgba(140,170,255,.55)'; ctx.lineWidth = 0.9; // żyła wielka serca
+    ctx.beginPath(); ctx.moveTo(1, -6); ctx.quadraticCurveTo(5, 4, 6, 15); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawLabels(fig) {
+    ctx.font = '500 9px "IBM Plex Mono", monospace'; ctx.textBaseline = 'middle';
+    ctx.strokeStyle = COL.leader; ctx.lineWidth = 0.6; ctx.setLineDash([2, 2]);
+    for (const L of fig.labels) {
+      const tx = L.side * 128;
+      ctx.beginPath(); ctx.moveTo(L.ax, L.ay); ctx.lineTo(tx - L.side * 6, L.y); ctx.stroke();
+      ctx.fillStyle = COL.label; ctx.textAlign = L.side > 0 ? 'left' : 'right'; ctx.fillText(L.t, tx, L.y);
+    }
+    ctx.setLineDash([]);
+  }
+
+  function drawFigure(fig, phase, resp, dt, opt) {
+    drawBody(fig);
+    if (opt.organs) drawOrgans(fig);
+    // grupa płucna: oddychanie = skalowanie względem szczytu płuc / wnęki
+    const lungTf = () => { ctx.translate(0, 140); ctx.scale(1 + 0.02 * resp, 1 + 0.035 * resp); ctx.translate(0, -140); };
+    ctx.save(); lungTf();
+    if (opt.organs) drawLungs(fig, resp);
+    ctx.lineCap = 'round';
+    if (opt.fine) drawGroups(fig, true);
+    ctx.globalAlpha = 0.55; for (const p of fig.paths) if (p.lung) drawVessel(p, phase, resp); ctx.globalAlpha = 1;
+    ctx.restore();
+    if (opt.fine) drawGroups(fig, false);
+    ctx.globalAlpha = 0.5; for (const p of fig.paths) if (!p.lung) drawVessel(p, phase, resp); ctx.globalAlpha = 1;
+    drawHeart(phase);
+    drawParticles(fig.paths.filter(p => !p.lung), phase, resp, dt);
+    if (opt.fine) drawParticles(fig.fine.filter(p => !p.lung), phase, resp, dt);
+    ctx.save(); lungTf();
+    drawParticles(fig.paths.filter(p => p.lung), phase, resp, dt);
+    if (opt.fine) drawParticles(fig.fine.filter(p => p.lung), phase, resp, dt);
+    ctx.restore();
+    if (opt.labels) drawLabels(fig);
+    ctx.font = '700 13px "Bricolage Grotesque", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = COL.label;
+    ctx.fillText(fig.B.name, 0, 730);
+  }
+
+  // ---------- EKG ----------
+  function ecgV(p) {
+    const g = (x, c, w, a) => a * Math.exp(-((x - c) ** 2) / (2 * w * w));
+    p = wrap(p); const q = p > 0.5 ? p - 1 : p;
+    return g(p, 0.87, 0.028, 0.14) + g(q, -0.025, 0.008, -0.1) + g(q, 0, 0.009, 1) + g(q, 0.03, 0.01, -0.26) + g(p, 0.31, 0.045, 0.3);
+  }
+  let ecgBuf = null, ecgHead = 0, ecgFrac = 0, ecgW = 0, ecgH = 0;
+  const SWEEP = 150;
+  function ecgStep(prevPhase, phase, dt, paused) {
+    const dpr = devicePixelRatio || 1;
+    const W = Math.round(ecgC.clientWidth * dpr), H = Math.round(ecgC.clientHeight * dpr);
+    if (W !== ecgW || H !== ecgH) { ecgW = W; ecgH = H; ecgC.width = W; ecgC.height = H; ecgBuf = new Float32Array(W).fill(NaN); ecgHead = 0; }
+    if (!paused && W > 0) {
+      ecgFrac += dt * SWEEP * dpr; const n = Math.floor(ecgFrac); ecgFrac -= n;
+      let dph = phase - prevPhase; if (dph < 0) dph += 1;
+      for (let k = 1; k <= n; k++) { ecgBuf[ecgHead] = ecgV(prevPhase + dph * k / n); ecgHead = (ecgHead + 1) % W; }
+    }
+    ectx.clearRect(0, 0, W, H);
+    ectx.strokeStyle = 'rgba(88,230,155,.10)'; ectx.lineWidth = 1;
+    for (let x = 0; x < W; x += 24 * dpr) { ectx.beginPath(); ectx.moveTo(x, 0); ectx.lineTo(x, H); ectx.stroke(); }
+    for (let y = 0; y < H; y += 24 * dpr) { ectx.beginPath(); ectx.moveTo(0, y); ectx.lineTo(W, y); ectx.stroke(); }
+    const base = H * 0.68, amp = H * 0.5, gap = 14 * dpr;
+    ectx.strokeStyle = COL.accent; ectx.lineWidth = 1.6 * dpr; ectx.lineJoin = 'round';
+    ectx.shadowColor = 'rgba(88,230,155,.6)'; ectx.shadowBlur = 6 * dpr;
+    ectx.beginPath(); let pen = false;
+    for (let x = 0; x < W; x++) {
+      const v = ecgBuf[x]; const inGap = ((x - ecgHead + W) % W) < gap;
+      if (Number.isNaN(v) || inGap) { pen = false; continue; }
+      const y = base - v * amp; if (!pen) { ectx.moveTo(x, y); pen = true; } else ectx.lineTo(x, y);
+    }
+    ectx.stroke(); ectx.shadowBlur = 0;
+    ectx.fillStyle = 'rgba(139,152,168,.9)'; ectx.font = `500 ${10 * dpr}px "IBM Plex Mono", monospace`; ectx.textBaseline = 'top';
+    ectx.fillText('EKG · II', 8 * dpr, 6 * dpr);
+  }
+
+  // ---------- model liczbowy ----------
+  function vitals(B, bpm) {
+    const x = Math.min(1, Math.max(0, (bpm - 70) / 80));
+    const sv = B.svRest * (1 + 0.25 * x) * (bpm > 170 ? 1 - (bpm - 170) / 100 : 1);
+    const co = bpm * sv / 1000;
+    return { sv, co, circ: B.vol / co * 60, sys: B.sysRest + (bpm - 70) * 0.45, dia: B.diaRest + (bpm - 70) * 0.05 };
+  }
+  const vitalsEl = $('#vitals'), statsEl = $('#stats');
+  function renderVitals(list, bpm) {
+    vitalsEl.innerHTML = list.map(id => {
+      const B = BODIES[id], v = vitals(B, bpm);
+      return `<div class="card"><h3>${B.name}<span>${B.vol.toFixed(1)} l krwi</span></h3><dl>
+        <dt>objętość wyrzutowa</dt><dd><b>${v.sv.toFixed(0)}</b><u>ml</u></dd>
+        <dt>pojemność minutowa</dt><dd><b>${v.co.toFixed(1)}</b><u>l/min</u></dd>
+        <dt>pełny obieg krwi</dt><dd><b>${v.circ.toFixed(0)}</b><u>s</u></dd>
+        <dt>ciśnienie (szac.)</dt><dd><b>${v.sys.toFixed(0)}/${v.dia.toFixed(0)}</b><u>mmHg</u></dd>
+        <dt>hemoglobina</dt><dd><b>${B.hb.toFixed(1)}</b><u>g/dl</u></dd>
+      </dl></div>`;
+    }).join('');
+    const c = list.reduce((a, id) => ({ v: a.v + FIG[id].counts.vessels, p: a.p + FIG[id].counts.particles }), { v: 0, p: 0 });
+    statsEl.textContent = `${c.v} odcinków naczyń · ${c.p} cząstek krwi`;
+  }
+
+  // ---------- stan i pętla ----------
+  let mode = 'both', bpm = 70, paused = false;
+  const opt = { labels: true, fine: true, organs: true };
+  let tGlobal = 0, heartT = 0, last = performance.now(), prevPhase = 0, vitalsDirty = true;
+  const FW = 340, FH = 750;
+
+  function resize() {
+    const dpr = devicePixelRatio || 1, r = stage.parentElement.getBoundingClientRect();
+    stage.width = Math.round(r.width * dpr); stage.height = Math.round(r.height * dpr);
+  }
+  new ResizeObserver(resize).observe($('#stageWrap')); resize();
+
+  function frame(now) {
+    const dt = paused ? 0 : Math.min(0.05, (now - last) / 1000); last = now;
+    tGlobal += dt; heartT += dt * bpm / 60;
+    const phase = wrap(heartT);
+    const respPeriod = 60 / (12 + Math.max(0, bpm - 70) * 0.2);
+    const resp = Math.sin(TAU * tGlobal / respPeriod);
+    const dpr = devicePixelRatio || 1, W = stage.width / dpr, H = stage.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    const list = mode === 'both' ? ['male', 'female'] : [mode];
+    const sc = Math.min(W / (list.length * FW), H / FH), total = list.length * FW * sc, x0 = (W - total) / 2, y0 = (H - FH * sc) / 2;
+    list.forEach((id, i) => {
+      const fig = FIG[id], k = fig.B.k;
+      ctx.save();
+      ctx.translate(x0 + (i + 0.5) * FW * sc, y0 + (1 - k) * FH * sc);
+      ctx.scale(sc * k, sc * k);
+      drawFigure(fig, phase, resp, dt, opt);
+      ctx.restore();
+    });
+    ecgStep(prevPhase, phase, dt, paused); prevPhase = phase;
+    if (vitalsDirty) { renderVitals(list, bpm); vitalsDirty = false; }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---------- sterowanie ----------
+  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode; vitalsDirty = true;
+    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  }));
+  const bpmIn = $('#bpm'), bpmOut = $('#bpmOut');
+  function setBpm(v) {
+    bpm = +v; bpmIn.value = v; bpmOut.textContent = v; vitalsDirty = true;
+    document.querySelectorAll('.presets button').forEach(x => x.classList.toggle('on', +x.dataset.bpm === bpm));
+  }
+  bpmIn.addEventListener('input', () => setBpm(bpmIn.value));
+  document.querySelectorAll('.presets button').forEach(b => b.addEventListener('click', () => setBpm(b.dataset.bpm)));
+  const pauseBtn = $('#pause');
+  function togglePause() { paused = !paused; pauseBtn.textContent = paused ? 'Wznów' : 'Zatrzymaj'; }
+  pauseBtn.addEventListener('click', togglePause);
+  $('#labels').addEventListener('change', e => opt.labels = e.target.checked);
+  $('#fine').addEventListener('change', e => opt.fine = e.target.checked);
+  $('#organs').addEventListener('change', e => opt.organs = e.target.checked);
+  addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') { e.preventDefault(); togglePause(); } });
+})();
+</script>
