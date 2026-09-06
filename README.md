@@ -39,8 +39,32 @@ Otwórz `krwiobieg.html` w przeglądarce. Nie jest potrzebny serwer ani build. F
 - Włośniczki: przepływ wolny, prawie ciągły; kolor cząstki zależy od pozycji na odcinku.
 - Drobne naczynia: rekurencyjny generator gałęzi (3 odcinki z losowym skrętem, 2–3 dzieci, długość × 0.6, szerokość × 0.62) ograniczony maską `Path2D` obrysu ciała lub płata płuca przez `isPointInPath`. Gałąź wychodząca poza obrys najpierw próbuje skręcić, potem się urywa. Generator jest deterministyczny (mulberry32).
 - Żyłki są generowane tym samym generatorem, a lista punktów jest odwracana, żeby przepływ szedł do serca.
-- Objętość wyrzutowa rośnie z tętnem do ok. 150/min, potem spada; pojemność minutowa = tętno × objętość wyrzutowa; czas obiegu = objętość krwi / pojemność minutowa.
+- Czas skurczu komór skaluje się jak odstęp QT (Bazett: k·√RR, k = 0,37 dla mężczyzn i 0,40 dla kobiet), więc udział skurczu w cyklu rośnie z tętnem: ok. 0,34 przy 70/min, ok. 0,5 przy 150/min. Skurcz przedsionków poprzedza skurcz komór o stały odstęp PR ≈ 160 ms.
+- EKG: PR i QRS stałe w milisekundach, QT skraca się z tętnem.
+- Objętość wyrzutowa rośnie o ok. 28 % i osiąga plateau przy tętnie ok. 115/min (40–50 % obciążenia maksymalnego u osób nietrenujących), powyżej 170/min lekko spada; pojemność minutowa = tętno × objętość wyrzutowa; czas obiegu = objętość krwi / pojemność minutowa.
+- Ciśnienie skurczowe rośnie z obciążeniem; rozkurczowe pozostaje płaskie lub lekko spada (wysiłek dynamiczny).
+
+## Zgodność z literaturą
+
+| Parametr w symulacji | Wartość | Źródło |
+|---|---|---|
+| Objętość krwi: 5,5 l (M) / 4,5 l (K) | 70–75 ml/kg (M), 65–70 ml/kg (K) | [Determinants and reference values for blood volume… (Am J Hematol)](https://onlinelibrary.wiley.com/doi/full/10.1002/ajh.27162) |
+| Hemoglobina: 15,0 / 13,5 g/dl | zakresy 13,5–17,5 (M), 12,0–15,5 (K) | [Medscape — Hemoglobin Concentration](https://emedicine.medscape.com/article/2085614-overview) |
+| Objętość wyrzutowa: 75 / 60 ml, pojemność minutowa 5,3 / 4,2 l/min | serce kobiety: SV niższa o ok. 20–23 %, CO niższe o 16–22 % | [Sex Matters: A Comprehensive Comparison of Female and Male Hearts (Front Physiol 2022)](https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2022.831179/full), [Differences in Cardiac Output… Between Sexes (PMC)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8970825/) |
+| Plateau objętości wyrzutowej | 40–50 % obciążenia maksymalnego (nietrenujący) | [Does Stroke Volume Increase During an Incremental Exercise? Systematic Review](https://www.sciencedirect.com/org/science/article/pii/S1874192416000214), [Left ventricular mechanical limitations to stroke volume (AJP Heart 2011)](https://journals.physiology.org/doi/full/10.1152/ajpheart.00314.2011) |
+| Ciśnienie rozkurczowe przy wysiłku | bez zmian lub lekki spadek | [Polish Archives of Internal Medicine](https://www.mp.pl/paim/issue/article/15114/), [Dynamic Exercise — ScienceDirect Topics](https://www.sciencedirect.com/topics/medicine-and-dentistry/dynamic-exercise) |
+| Czas skurczu = k·√RR | Bazett 1920; k = 0,37 (M), 0,40 (K) | [The Duration of Systole in an Electrocardiogram (PMC)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7328879/), [LITFL — Bazett formula](https://litfl.com/bazett-formula/) |
+| PR ≈ 160 ms, QT 350–450 ms | PR 120–200 ms; skurcz przedsionków ~100 ms | [MedSchool — PR interval](https://medschool.co/tests/ecg-basics/the-pr-interval), [LITFL — QT interval](https://litfl.com/qt-interval-ecg-library/) |
+| Prędkość fali tętna: ok. 2,3 m/s w skali sylwetki | aorta zdrowego dorosłego 6–8 m/s — celowe spowolnienie ok. 3× | [Age-related values of aortic PWV (J Hum Hypertens)](https://www.nature.com/articles/s41371-020-00466-4) |
+| Pień trzewny → t. krezkowa górna → t. nerkowe → t. krezkowa dolna | T12 → L1 → L1–L2 → L3 | [StatPearls — Abdominal Aorta](https://www.ncbi.nlm.nih.gov/books/NBK525964/), [StatPearls — Superior Mesenteric Artery](https://www.ncbi.nlm.nih.gov/books/NBK519560/) |
+| T. kręgowa odchodzi od t. podobojczykowej | pierwsza gałąź t. podobojczykowej | [StatPearls — Subclavian Arteries](https://www.ncbi.nlm.nih.gov/books/NBK539736/), [TeachMeAnatomy — Vertebral Artery](https://teachmeanatomy.info/neck/vessels/arterial/vertebral-artery/) |
+| Prawa nerka niżej niż lewa | o 2–8 cm z powodu wątroby | [StatPearls — Kidneys](https://www.ncbi.nlm.nih.gov/books/NBK482385/) |
+| Rozdwojenie tchawicy na wysokości kąta mostka | T4/T5 | [Radiopaedia — Carina](https://radiopaedia.org/articles/carina), [StatPearls — Angle of Louis](https://www.ncbi.nlm.nih.gov/books/NBK459336/) |
 
 ## Zastrzeżenia
 
-Kolory są umowne — krew odtlenowana jest ciemnoczerwona, nie niebieska. Przebieg drobnych naczyń jest ilustracyjny; nazwane naczynia główne odpowiadają anatomii w uproszczeniu. Wartości liczbowe są typowe dla zdrowej osoby dorosłej i pochodzą z prostego modelu, nie z pomiaru.
+- Kolory są umowne — krew odtlenowana jest ciemnoczerwona, nie niebieska.
+- Prędkości cząstek nie są w skali: w organizmie krew w aorcie płynie średnio ok. 30 cm/s, we włośniczkach ok. 0,05 cm/s (różnica ~600×); w symulacji stosunek jest rzędu 4×, inaczej włośniczki wyglądałyby na nieruchome ([Blood Flow Velocity — ScienceDirect Topics](https://www.sciencedirect.com/topics/medicine-and-dentistry/blood-flow-velocity)).
+- Obie sylwetki mają wspólne tętno z suwaka; w rzeczywistości spoczynkowe tętno kobiet jest średnio o kilka uderzeń wyższe.
+- Przebieg drobnych naczyń jest ilustracyjny; nazwane naczynia główne odpowiadają anatomii w uproszczeniu (np. pień trzewny i tętnice wieńcowe są rysowane schematycznie, obieg kończyn nie ma wszystkich gałęzi).
+- Wartości liczbowe są typowe dla zdrowej osoby dorosłej i pochodzą z prostego modelu, nie z pomiaru.
