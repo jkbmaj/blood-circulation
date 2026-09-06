@@ -35,11 +35,11 @@ Otwórz `krwiobieg.html` w przeglądarce. Nie jest potrzebny serwer ani build. F
 
 - Każde naczynie jest polilinią zapisaną **w kierunku przepływu**. Cząstka krwi ma jeden stopień swobody — odległość `d` wzdłuż ścieżki.
 - Tętnice: prędkość zależy od fazy skurczu komór opóźnionej o `d / PWV` (fala tętna rozchodzi się od serca; prędkość fali spowolniona ok. 3× względem fizjologii, żeby była widoczna). Ściana tętnicy pulsuje z tym samym opóźnieniem.
-- Żyły: przepływ ciągły, modulowany pompą oddechową i skurczem przedsionka.
+- Żyły obwodowe: przepływ ciągły, modulowany pompą oddechową. Żyły centralne (główne, szyjne, wątrobowe, nerkowe) i żyły płucne: wzorzec dopplerowski S–D–A — największy napływ w czasie skurczu komór (fala S), mniejszy we wczesnym rozkurczu (fala D), zahamowanie lub krótkie cofnięcie przy skurczu przedsionka (fala A).
 - Włośniczki: przepływ wolny, prawie ciągły; kolor cząstki zależy od pozycji na odcinku.
 - Drobne naczynia: rekurencyjny generator gałęzi (3 odcinki z losowym skrętem, 2–3 dzieci, długość × 0.6, szerokość × 0.62) ograniczony maską `Path2D` obrysu ciała lub płata płuca przez `isPointInPath`. Gałąź wychodząca poza obrys najpierw próbuje skręcić, potem się urywa. Generator jest deterministyczny (mulberry32).
 - Żyłki są generowane tym samym generatorem, a lista punktów jest odwracana, żeby przepływ szedł do serca.
-- Czas skurczu komór skaluje się jak odstęp QT (Bazett: k·√RR, k = 0,37 dla mężczyzn i 0,40 dla kobiet), więc udział skurczu w cyklu rośnie z tętnem: ok. 0,34 przy 70/min, ok. 0,5 przy 150/min. Skurcz przedsionków poprzedza skurcz komór o stały odstęp PR ≈ 160 ms.
+- Czas wyrzutu komór (LVET ≈ 0,75·QT) skaluje się jak odstęp QT (Bazett: k·√RR, k = 0,37 dla mężczyzn i 0,40 dla kobiet), więc udział skurczu w cyklu rośnie z tętnem: ok. 0,30 przy 70/min, ok. 0,44 przy 150/min — rozkurcz skraca się nieproporcjonalnie bardziej. Skurcz przedsionków poprzedza skurcz komór o stały odstęp PR ≈ 160 ms.
 - EKG: PR i QRS stałe w milisekundach, QT skraca się z tętnem.
 - Objętość wyrzutowa rośnie o ok. 28 % i osiąga plateau przy tętnie ok. 115/min (40–50 % obciążenia maksymalnego u osób nietrenujących), powyżej 170/min lekko spada; pojemność minutowa = tętno × objętość wyrzutowa; czas obiegu = objętość krwi / pojemność minutowa.
 - Ciśnienie skurczowe rośnie z obciążeniem; rozkurczowe pozostaje płaskie lub lekko spada (wysiłek dynamiczny).
@@ -55,7 +55,8 @@ Otwórz `krwiobieg.html` w przeglądarce. Nie jest potrzebny serwer ani build. F
 | Ciśnienie rozkurczowe przy wysiłku | bez zmian lub lekki spadek | [Polish Archives of Internal Medicine](https://www.mp.pl/paim/issue/article/15114/), [Dynamic Exercise — ScienceDirect Topics](https://www.sciencedirect.com/topics/medicine-and-dentistry/dynamic-exercise) |
 | Czas skurczu = k·√RR | Bazett 1920; k = 0,37 (M), 0,40 (K) | [The Duration of Systole in an Electrocardiogram (PMC)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7328879/), [LITFL — Bazett formula](https://litfl.com/bazett-formula/) |
 | PR ≈ 160 ms, QT 350–450 ms | PR 120–200 ms; skurcz przedsionków ~100 ms | [MedSchool — PR interval](https://medschool.co/tests/ecg-basics/the-pr-interval), [LITFL — QT interval](https://litfl.com/qt-interval-ecg-library/) |
-| Prędkość fali tętna: ok. 2,3 m/s w skali sylwetki | aorta zdrowego dorosłego 6–8 m/s — celowe spowolnienie ok. 3× | [Age-related values of aortic PWV (J Hum Hypertens)](https://www.nature.com/articles/s41371-020-00466-4) |
+| Wzorzec przepływu w żyłach centralnych i płucnych: fale S, D, A | S > D, fala A = cofnięcie 1–16 % | [SVC and hepatic vein Doppler in healthy adults (JACC)](https://www.jacc.org/doi/10.1016/S0735-1097(87)80343-1), [Doppler Flow Velocity Patterns of SVC, IVC, Hepatic Vein (J Am Soc Echocardiogr)](https://www.sciencedirect.com/science/article/abs/pii/S0894731714803866) |
+| Prędkość fali tętna: ok. 2 m/s w skali sylwetki | aorta zdrowego dorosłego 6–8 m/s — celowe spowolnienie ok. 3× | [Age-related values of aortic PWV (J Hum Hypertens)](https://www.nature.com/articles/s41371-020-00466-4) |
 | Pień trzewny → t. krezkowa górna → t. nerkowe → t. krezkowa dolna | T12 → L1 → L1–L2 → L3 | [StatPearls — Abdominal Aorta](https://www.ncbi.nlm.nih.gov/books/NBK525964/), [StatPearls — Superior Mesenteric Artery](https://www.ncbi.nlm.nih.gov/books/NBK519560/) |
 | T. kręgowa odchodzi od t. podobojczykowej | pierwsza gałąź t. podobojczykowej | [StatPearls — Subclavian Arteries](https://www.ncbi.nlm.nih.gov/books/NBK539736/), [TeachMeAnatomy — Vertebral Artery](https://teachmeanatomy.info/neck/vessels/arterial/vertebral-artery/) |
 | Prawa nerka niżej niż lewa | o 2–8 cm z powodu wątroby | [StatPearls — Kidneys](https://www.ncbi.nlm.nih.gov/books/NBK482385/) |
