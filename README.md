@@ -2,6 +2,11 @@
 
 Interaktywna, animowana w czasie rzeczywistym symulacja układu krwionośnego człowieka — sylwetka męska i żeńska, widok od przodu. Jeden plik HTML, czysty JavaScript i Canvas 2D, bez zależności.
 
+## Podgląd
+
+- Wersja hostowana: https://claude.ai/code/artifact/1031b1c6-f528-4984-a42a-75e9294bf0ec
+- GitHub Pages (po włączeniu Pages dla gałęzi `main`): https://jkbmaj.github.io/blood-circulation/krwiobieg.html
+
 ## Uruchomienie
 
 Otwórz `krwiobieg.html` w przeglądarce. Nie jest potrzebny serwer ani build. Fonty są ładowane z Google Fonts; bez sieci strona działa na fontach zastępczych.
