@@ -4,8 +4,7 @@ Interaktywna, animowana w czasie rzeczywistym symulacja układu krwionośnego cz
 
 ## Podgląd
 
-- Wersja hostowana: https://claude.ai/code/artifact/1031b1c6-f528-4984-a42a-75e9294bf0ec
-- GitHub Pages (po włączeniu Pages dla gałęzi `main`): https://jkbmaj.github.io/blood-circulation/krwiobieg.html
+https://jkbmaj.github.io/blood-circulation/krwiobieg.html
 
 ## Uruchomienie
 
